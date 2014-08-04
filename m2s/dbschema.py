@@ -11,18 +11,35 @@ except Exception, e:
     print "Can't load configuration: %s" % (str(e))
     sys.exit(1)
 
-mysql_db = MySQLDatabase(cf.get('dbname', 'owntracks'),
-    user=cf.get('dbuser'),
-    passwd=cf.get('dbpasswd'),
-    port=cf.get('dbport', 3306),
-    threadlocals=True)
+database_engine = cf.get('dbengine', 'MySQL')
+database = None
 
-class MySQLModel(Model):
+if database_engine == 'MySQL':
+    database = MySQLDatabase(
+        cf.get('dbname', 'owntracks'),
+        user=cf.get('dbuser'),
+        passwd=cf.get('dbpasswd'),
+        port=cf.get('dbport', 3306),
+        threadlocals=True
+    )
+elif database_engine == 'PostgreSQL':
+    database = PostgresqlDatabase(
+        cf.get('dbname', 'owntracks'),
+        user=cf.get('dbuser'),
+        password=cf.get('dbpasswd'),
+        port=cf.get('dbport', 5432),
+        threadlocals=True
+    )
+else:
+    print "Unsupported database engine: %s" % (database_engine)
+    sys.exit(1)
+
+class SQLModel(Model):
 
     class Meta:
-        database = mysql_db
+        database = database
 
-class Location(MySQLModel):
+class Location(SQLModel):
     topic           = BlobField(null=False)
     username        = CharField(null=False)
     device          = CharField(null=False)
@@ -39,7 +56,7 @@ class Location(MySQLModel):
     weather         = CharField(null=True)
     revgeo          = CharField(null=True)
 
-class Waypoint(MySQLModel):
+class Waypoint(SQLModel):
     topic           = BlobField(null=False)
     username        = CharField(null=False)
     device          = CharField(null=False)
@@ -56,7 +73,7 @@ class Waypoint(MySQLModel):
         )
 
 if __name__ == '__main__':
-    mysql_db.connect()
+    database.connect()
 
     try:
         Location.create_table(fail_silently=True)

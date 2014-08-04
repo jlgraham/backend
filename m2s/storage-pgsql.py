@@ -1,6 +1,6 @@
-
 import logging
-from dbschema import Location, database
+import peewee
+from dbschema import Waypoint, Location, database
 
 def storage(topic, item, m2s=None):
     """
@@ -33,13 +33,13 @@ def storage(topic, item, m2s=None):
         if item['_type'] == 'waypoint':
             # Upsert
             try:
-                database.execute_sql("""
-                  REPLACE INTO waypoint
-                  (topic, username, device, lat, lon, tst, rad, waypoint)
-                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                  """, (
-                  item['topic'], item['username'], item['device'], item['lat'],
-                  item['lon'], item['tst'], item['rad'], item['desc'],))
+                try:
+                    Waypoint.get(Waypoint.tst == item['tst']).delete_instance()
+                except peewee.WaypointDoesNotExist:
+                    pass
+
+                waypoint = Waypoint(**item)
+                waypoint.save()
             except Exception, e:
                 logging.info("Cannot upsert waypoint in DB: %s" % (str(e)))
 
@@ -49,4 +49,3 @@ def storage(topic, item, m2s=None):
                 loca.save()
             except Exception, e:
                 logging.info("Cannot store location in DB: %s" % (str(e)))
-

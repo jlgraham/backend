@@ -27,11 +27,17 @@ topics = [
 
 # Storage
 
-storage_plugin = 'storage.py'
 dbname = 'owntracks'          # default: "owntracks"
 dbuser = 'username'
 dbpasswd = 'password'
-dbport = 3306                 # default: 3306
+dbengine = 'MySQL'            # default: "MySQL"
+
+if dbengine == 'MySQL':
+    dbport = 3306                 # default: 3306
+    storage_plugin = 'storage.py'
+elif dbengine == 'PostgreSQL':
+    dbport = 5432                 # default: 5432
+    storage_plugin = 'storage-pgsql.py'
 
 # Plugins
 
